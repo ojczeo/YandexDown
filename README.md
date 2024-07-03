@@ -1,32 +1,61 @@
+Certainly! Here's the combined README file that integrates information from both the original repository ([SecFathy/YandexDown](https://github.com/SecFathy/YandexDown)) and your modified script:
 
-# Yandex Disk Downloader Tool
+---
 
-The Yandex Disk Downloader Tool is a simple Python script that allows users to download files from Yandex Disk easily. With this tool, users can download both small and large files from Yandex Disk with ease. The tool takes in a Yandex Disk file link and a download location, and then downloads the specified file to the designated location.
+# Yandex Disk Downloader
 
+This Python script downloads files from Yandex Disk using the public link provided. It handles downloading large files and displays download progress when possible.
 
+## Based on
 
+This script is based on the original implementation by [SecFathy](https://github.com/SecFathy/YandexDown). It has been modified and enhanced for improved functionality and ease of use.
 
+## Requirements
+
+- Python 3.x
+- Required Python packages (`requests`)
+
+Install required packages using pip:
+```bash
+pip install requests
+```
 
 ## Installation
 
-Installation Requirement 
-
+Clone the repository:
 ```bash
-  pip install requests
+git clone https://github.com/your/repository.git
+cd repository
 ```
-    
-## Usage/Examples
 
-To use the tool, follow these steps:
+## Usage
+
+To use the script, follow these steps:
 
 1. Run the following command in your terminal:
 
+```bash
+python yandex_disk_downloader.py -l <Yandex Disk public link> -d <download location>
 ```
-python3 YandexCLI.py -l <yandex_link> -d <download_location>
 
+Replace `<Yandex Disk public link>` with the public link of the file you want to download from Yandex Disk.
+Replace `<download location>` with the directory path where you want to save the downloaded file.
+
+Example:
+```bash
+python yandex_disk_downloader.py -l https://disk.yandex.com/d/public_key123 -d /path/to/save/location
 ```
 
-2. Replace <yandex_link> with the link to the file you want to download from Yandex Disk, and <download_location> with the directory where you want to save the downloaded file.
+2. Press Enter and wait for the download to complete.
 
+## Features
 
-3. Press Enter and wait for the download to complete.
+- Handles large file downloads efficiently.
+- Displays download progress dynamically when possible.
+- Checks if the file already exists before attempting to download it again.
+- Error handling for network issues and other exceptions.
+
+## Notes
+
+- If the `content-length` header is missing in the server response, the script will download the file without displaying progress.
+- Ensure you have sufficient disk space and a stable internet connection for downloading large files.
