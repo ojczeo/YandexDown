@@ -25,38 +25,30 @@ class YandexDiskDownloader:
             file_name = urllib.parse.unquote(download_url.split("filename=")[1].split("&")[0])
             save_path = os.path.join(self.download_location, file_name)
 
+            # Check if the file already exists and its size matches the expected total size
+            expected_size = self.get_expected_file_size(download_url)
+            if os.path.exists(save_path):
+                file_size = os.path.getsize(save_path)
+                if file_size >= expected_size:
+                    print(f"\033[93mFile '{file_name}' already fully downloaded.\033[0m")
+                    return
+
             print(f"\033[94mFile will be saved to: {save_path}\033[0m\n")
 
-            # Check if the file partially exists
-            resume_mode = False
-            resume_byte_pos = 0
-
-            if os.path.exists(save_path):
-                resume_byte_pos = os.path.getsize(save_path)
-                resume_mode = True
-                print(f"\033[94mResuming download from byte position {resume_byte_pos}\033[0m\n")
-
             # Start downloading the file
-            with open(save_path, "ab" if resume_mode else "wb") as file:
+            with open(save_path, "wb") as file:
                 print(f"\033[94mDownloading from: {download_url}\033[0m\n")
 
-                # Determine request headers for resuming or starting new download
-                headers = {'Range': f'bytes={resume_byte_pos}-'} if resume_mode else {}
-
-                download_response = requests.get(download_url, headers=headers, stream=True)
+                download_response = requests.get(download_url, stream=True)
                 download_response.raise_for_status()
 
-                # Get the total file size
                 total_size_header = download_response.headers.get('content-length')
                 total_size = int(total_size_header) if total_size_header else None
 
                 if total_size is not None:
-                    if resume_mode:
-                        total_size += resume_byte_pos
-
                     print(f"\033[94mTotal file size: {self.format_size(total_size)}\033[0m\n")
 
-                    progress = resume_byte_pos
+                    progress = 0
                     for chunk in download_response.iter_content(chunk_size=10240):
                         if chunk:
                             file.write(chunk)
@@ -67,7 +59,7 @@ class YandexDiskDownloader:
 
                 else:
                     print("\033[93mContent-Length header is missing. Downloading without progress indication.\033[0m\n")
-                    total_downloaded = resume_byte_pos
+                    total_downloaded = 0
                     for chunk in download_response.iter_content(chunk_size=10240):
                         if chunk:
                             file.write(chunk)
@@ -81,11 +73,18 @@ class YandexDiskDownloader:
         except Exception as e:
             print(f"\n\033[91mAn unexpected error occurred: {e}\033[0m")
 
+    def get_expected_file_size(self, download_url):
+        try:
+            response = requests.head(download_url)
+            response.raise_for_status()
+            return int(response.headers.get('content-length', 0))
+        except requests.exceptions.RequestException as e:
+            print(f"\033[91mAn error occurred while fetching file size: {e}\033[0m")
+            return 0
+
     def format_size(self, size):
         # Convert size to appropriate unit (KB, MB, GB)
-        if size is None:
-            return "Unknown"
-        elif size < 1024:
+        if size < 1024:
             return f"{size} B"
         elif size < 1024 * 1024:
             return f"{size / 1024:.2f} KB"
