@@ -28,27 +28,32 @@ class YandexDiskDownloader:
             print(f"\033[94mFile will be saved to: {save_path}\033[0m\n")
 
             # Check if the file partially exists
+            resume_mode = False
+            resume_byte_pos = 0
+
             if os.path.exists(save_path):
                 resume_byte_pos = os.path.getsize(save_path)
-                resume_header = {'Range': f'bytes={resume_byte_pos}-'}
                 resume_mode = True
                 print(f"\033[94mResuming download from byte position {resume_byte_pos}\033[0m\n")
-            else:
-                resume_mode = False
 
             # Start downloading the file
             with open(save_path, "ab" if resume_mode else "wb") as file:
                 print(f"\033[94mDownloading from: {download_url}\033[0m\n")
 
                 # Determine request headers for resuming or starting new download
-                headers = resume_header if resume_mode else {}
+                headers = {'Range': f'bytes={resume_byte_pos}-'} if resume_mode else {}
 
                 download_response = requests.get(download_url, headers=headers, stream=True)
                 download_response.raise_for_status()
 
-                # Get the total file size if available
-                total_size = int(download_response.headers.get('content-length', 0))
-                if total_size > 0:
+                # Get the total file size
+                total_size_header = download_response.headers.get('content-length')
+                total_size = int(total_size_header) if total_size_header else None
+
+                if total_size is not None:
+                    if resume_mode:
+                        total_size += resume_byte_pos
+
                     print(f"\033[94mTotal file size: {self.format_size(total_size)}\033[0m\n")
 
                     progress = resume_byte_pos
@@ -57,7 +62,7 @@ class YandexDiskDownloader:
                             file.write(chunk)
                             progress += len(chunk)
                             percentage = (progress / total_size) * 100
-                            print(f"\r\033[94mDownload Progress: {percentage:.2f}% ({self.format_size(progress)}/{self.format_size(total_size)})\033[0m", end="")
+                            print(f"\r\033[94mDownload Progress: {percentage:.2f}% ({self.format_size(progress)} / {self.format_size(total_size)})\033[0m", end="")
                             sys.stdout.flush()
 
                 else:
@@ -78,7 +83,9 @@ class YandexDiskDownloader:
 
     def format_size(self, size):
         # Convert size to appropriate unit (KB, MB, GB)
-        if size < 1024:
+        if size is None:
+            return "Unknown"
+        elif size < 1024:
             return f"{size} B"
         elif size < 1024 * 1024:
             return f"{size / 1024:.2f} KB"
