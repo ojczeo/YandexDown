@@ -27,19 +27,31 @@ class YandexDiskDownloader:
 
             print(f"\033[94mFile will be saved to: {save_path}\033[0m\n")
 
+            # Check if the file partially exists
+            if os.path.exists(save_path):
+                resume_byte_pos = os.path.getsize(save_path)
+                resume_header = {'Range': f'bytes={resume_byte_pos}-'}
+                resume_mode = True
+                print(f"\033[94mResuming download from byte position {resume_byte_pos}\033[0m\n")
+            else:
+                resume_mode = False
+
             # Start downloading the file
-            with open(save_path, "wb") as file:
+            with open(save_path, "ab" if resume_mode else "wb") as file:
                 print(f"\033[94mDownloading from: {download_url}\033[0m\n")
-                download_response = requests.get(download_url, stream=True)
+
+                # Determine request headers for resuming or starting new download
+                headers = resume_header if resume_mode else {}
+
+                download_response = requests.get(download_url, headers=headers, stream=True)
                 download_response.raise_for_status()
 
                 # Get the total file size if available
-                total_size = download_response.headers.get('content-length')
-                if total_size:
-                    total_size = int(total_size)
+                total_size = int(download_response.headers.get('content-length', 0))
+                if total_size > 0:
                     print(f"\033[94mTotal file size: {self.format_size(total_size)}\033[0m\n")
 
-                    progress = 0
+                    progress = resume_byte_pos
                     for chunk in download_response.iter_content(chunk_size=10240):
                         if chunk:
                             file.write(chunk)
@@ -50,7 +62,7 @@ class YandexDiskDownloader:
 
                 else:
                     print("\033[93mContent-Length header is missing. Downloading without progress indication.\033[0m\n")
-                    total_downloaded = 0
+                    total_downloaded = resume_byte_pos
                     for chunk in download_response.iter_content(chunk_size=10240):
                         if chunk:
                             file.write(chunk)
