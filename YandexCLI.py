@@ -37,15 +37,15 @@ class YandexDiskDownloader:
                 total_size = download_response.headers.get('content-length')
                 if total_size:
                     total_size = int(total_size)
-                    progress = 0
-                    print(f"\033[94mTotal file size: {total_size / 1024:.2f} KB\033[0m\n")
+                    print(f"\033[94mTotal file size: {self.format_size(total_size)}\033[0m\n")
 
+                    progress = 0
                     for chunk in download_response.iter_content(chunk_size=10240):
                         if chunk:
                             file.write(chunk)
                             progress += len(chunk)
                             percentage = (progress / total_size) * 100
-                            print(f"\r\033[94mDownload Progress: {percentage:.2f}%\033[0m", end="")
+                            print(f"\r\033[94mDownload Progress: {percentage:.2f}% ({self.format_size(progress)}/{self.format_size(total_size)})\033[0m", end="")
                             sys.stdout.flush()
 
                 else:
@@ -55,7 +55,7 @@ class YandexDiskDownloader:
                         if chunk:
                             file.write(chunk)
                             total_downloaded += len(chunk)
-                            print(f"\r\033[94mDownloaded {total_downloaded / 1024:.2f} KB so far\033[0m", end="")
+                            print(f"\r\033[94mDownloaded {self.format_size(total_downloaded)} so far\033[0m", end="")
                             sys.stdout.flush()
 
             print("\n\n\033[92mDownload complete.\033[0m")
@@ -63,6 +63,17 @@ class YandexDiskDownloader:
             print(f"\n\033[91mAn error occurred during the request: {e}\033[0m")
         except Exception as e:
             print(f"\n\033[91mAn unexpected error occurred: {e}\033[0m")
+
+    def format_size(self, size):
+        # Convert size to appropriate unit (KB, MB, GB)
+        if size < 1024:
+            return f"{size} B"
+        elif size < 1024 * 1024:
+            return f"{size / 1024:.2f} KB"
+        elif size < 1024 * 1024 * 1024:
+            return f"{size / (1024 * 1024):.2f} MB"
+        else:
+            return f"{size / (1024 * 1024 * 1024):.2f} GB"
 
 
 if __name__ == "__main__":
