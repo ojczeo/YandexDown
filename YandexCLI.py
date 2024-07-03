@@ -36,19 +36,18 @@ class YandexDiskDownloader:
             print(f"\033[94mFile will be saved to: {save_path}\033[0m\n")
 
             # Start downloading the file
-            with open(save_path, "wb") as file:
+            with open(save_path, "ab" if os.path.exists(save_path) else "wb") as file:
                 print(f"\033[94mDownloading from: {download_url}\033[0m\n")
 
                 download_response = requests.get(download_url, stream=True)
                 download_response.raise_for_status()
 
-                total_size_header = download_response.headers.get('content-length')
-                total_size = int(total_size_header) if total_size_header else None
+                total_size = self.get_expected_file_size(download_url)
 
                 if total_size is not None:
                     print(f"\033[94mTotal file size: {self.format_size(total_size)}\033[0m\n")
 
-                    progress = 0
+                    progress = os.path.getsize(save_path) if os.path.exists(save_path) else 0
                     for chunk in download_response.iter_content(chunk_size=10240):
                         if chunk:
                             file.write(chunk)
@@ -80,11 +79,13 @@ class YandexDiskDownloader:
             return int(response.headers.get('content-length', 0))
         except requests.exceptions.RequestException as e:
             print(f"\033[91mAn error occurred while fetching file size: {e}\033[0m")
-            return 0
+            return None
 
     def format_size(self, size):
         # Convert size to appropriate unit (KB, MB, GB)
-        if size < 1024:
+        if size is None:
+            return "Unknown"
+        elif size < 1024:
             return f"{size} B"
         elif size < 1024 * 1024:
             return f"{size / 1024:.2f} KB"
