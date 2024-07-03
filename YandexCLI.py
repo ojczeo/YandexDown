@@ -9,6 +9,7 @@ class YandexDiskDownloader:
     def __init__(self, link, download_location):
         self.link = link
         self.download_location = download_location
+        self.cancelled = False
 
     def download(self):
         try:
@@ -56,6 +57,16 @@ class YandexDiskDownloader:
                             print(f"\r\033[94mDownload Progress: {percentage:.2f}% ({self.format_size(progress)} / {self.format_size(total_size)})\033[0m", end="")
                             sys.stdout.flush()
 
+                            # Check if user wants to cancel download
+                            if self.cancelled:
+                                confirm_cancel = input("\n\n\033[91mDo you really want to cancel the download? (y/n): \033[0m").strip().lower()
+                                if confirm_cancel == 'y':
+                                    print("\n\033[91mDownload cancelled by user.\033[0m")
+                                    return
+                                else:
+                                    self.cancelled = False  # Reset cancelled flag
+                                    print("\033[94mResuming download...\033[0m")
+                                    
                 else:
                     print("\033[93mContent-Length header is missing. Downloading without progress indication.\033[0m\n")
                     total_downloaded = 0
@@ -66,9 +77,21 @@ class YandexDiskDownloader:
                             print(f"\r\033[94mDownloaded {self.format_size(total_downloaded)} so far\033[0m", end="")
                             sys.stdout.flush()
 
+                            # Check if user wants to cancel download
+                            if self.cancelled:
+                                confirm_cancel = input("\n\n\033[91mDo you really want to cancel the download? (y/n): \033[0m").strip().lower()
+                                if confirm_cancel == 'y':
+                                    print("\n\033[91mDownload cancelled by user.\033[0m")
+                                    return
+                                else:
+                                    self.cancelled = False  # Reset cancelled flag
+                                    print("\033[94mResuming download...\033[0m")
+
             print("\n\n\033[92mDownload complete.\033[0m")
         except requests.exceptions.RequestException as e:
             print(f"\n\033[91mAn error occurred during the request: {e}\033[0m")
+        except KeyboardInterrupt:
+            self.cancelled = True
         except Exception as e:
             print(f"\n\033[91mAn unexpected error occurred: {e}\033[0m")
 
