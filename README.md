@@ -1,7 +1,3 @@
-Certainly! Here's the combined README file that integrates information from both the original repository ([SecFathy/YandexDown](https://github.com/SecFathy/YandexDown)) and your modified script:
-
----
-
 # Yandex Disk Downloader
 
 This Python script downloads files from Yandex Disk using the public link provided. It handles downloading large files and displays download progress when possible.
